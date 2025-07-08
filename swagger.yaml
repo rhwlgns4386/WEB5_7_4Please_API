@@ -303,14 +303,14 @@ paths:
                             instantPrice:
                               type: integer
                               description: 즉시 입찰 금액
-                            bidderCount:
+                            bidCount:
                               type: integer
-                              description: 입찰자 수
+                              description: 입찰 수
                             endTime:
                               type: string
                               format: date-time
                               description: 경매 종료 시간
-                            isWishList:
+                            isWishlist:
                               type: boolean
                               description: 위시리스트 포함 여부
     post:
@@ -525,14 +525,19 @@ paths:
                             description:
                               type: string
                               description: 상품 설명
-                            bidderCount:
+                            salesCount:
                               type: integer
-                              description: 입찰자 수
+                              description: 총 판매 수
+                            bidCount:
+                              type: integer
+                              description: 입찰 수
                             status:
                               type: string
                               enum: [waiting auction,in progress,pay waiting]
   /api/v1/auctions/{auctionId}/shipment:
     post:
+      tags : 
+      - shipment
       summary: 운송장 번호 등록
       description: 판매자가 특정 거래에 대한 운송장 번호를 입력합니다.
       parameters:
@@ -548,7 +553,7 @@ paths:
             schema:
               type: object
               properties:
-                shippingCode:
+                trackingNumber:
                   type: string
                   example: "1234567890123"
       responses:
@@ -588,7 +593,7 @@ paths:
                         items:
                           type: object
                           properties:
-                            wishListId:
+                            wishlistId:
                               type: integer
                               description: 위시리스트 id
                             auctionId:
@@ -604,9 +609,17 @@ paths:
                             maxPrice:
                               type: integer
                               description: 최대 입찰금액
-                            bidderCount:
+                            bidCount:
                               type: integer
-                              description: 입찰자 카운트
+                              description: 입찰 수
+                            wishCount: 
+                              type: integer
+                              description: 관심 수
+                            createdAt:
+                              type: string
+                              format: date-time
+                              description: 생성 날짜
+                              example: "2025-07-01T09:00:00Z"
       
     post:
       tags:
@@ -629,7 +642,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  wishListId:
+                  wishlistId:
                     type: integer
                     description: 위시리스트id
         '401':
@@ -837,6 +850,7 @@ paths:
     post:
       tags:
         - Order
+      summary: 주문하기
       parameters:
         - name: auctionId
           in: path
@@ -849,8 +863,8 @@ paths:
           required: true
           schema:
             type: string
-            enum: [buy-now,asward-bit]
-            description: 조회할 경매의 ID
+            enum: [buy-now, award-bit]
+            description: 주문 종류
       requestBody:
         content:
           application/json:
@@ -872,6 +886,12 @@ paths:
                 phoneNumber:
                   type: string
                   description: 핸드폰 번호
+                reciver:
+                  type: string
+                  description: 받는 분
+                content: 
+                  type: string
+                  description: 배송 요청 사항
       responses:
         '200':
           description: 즉시입찰 주문 성공
@@ -893,6 +913,7 @@ paths:
     post:
       tags:
         - Payment
+      summary: 결제 승인
       requestBody:
         content:
           application/json:
@@ -961,6 +982,10 @@ paths:
                               type: integer
                               description: 입찰 ID
                               example: 123
+                            thumbnailUrl:
+                              type: string
+                              format: uri
+                              description: 썸네일 이미지 URL
                             product:
                               type: string
                               description: 입찰 상품 
@@ -975,6 +1000,9 @@ paths:
                                 - SUCCESS
                                 - FAILED
                                 - CANCELED
+                            startBidPrice:
+                              type: integer
+                              description: 입찰 시작가
                             highestBidPrice:
                               type: integer
                               description: 최대 입찰 금액 
@@ -1081,9 +1109,12 @@ paths:
                             instantPrice:
                               type: integer
                               description: 즉시 입찰 금액
-                            bidderCount:
+                            bidCount:
                               type: integer
-                              description: 입찰자 수
+                              description: 입찰 수
+                            salesCount:
+                              type: integer
+                              description: 총 판매 수
                             endTime:
                               type: string
                               format: date-time
@@ -1096,6 +1127,11 @@ paths:
                               type: string
                               format: date-time
                               description: 결제 마감 시간
+                            createdAt:
+                              type: string
+                              format: date-time
+                              description: 생성 날짜
+                              example: "2025-07-01T09:00:00Z"
                             status:
                               type: string
                               enum: [OPEN, PENDING, SUCCESS, REJECT, INTRANSIT, DELIVERED, FAIL]
@@ -1162,6 +1198,64 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/SimpleErrorResponse'
+  /api/v1/categories:
+    get:
+      tags:
+        - Category
+      summary: 카테고리 목록 조회
+      description: 전체 카테고리 목록을 조회합니다.
+      responses:
+        '200':
+          description: 카테고리 리스트 조회 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+              examples:
+                example:
+                  summary: 조회 예시
+                  value:
+                    - categoryId: 1
+                      name: 패션
+                    - categoryId: 2
+                      name: 전자제품
+                    - categoryId: 3
+                      name: 스포츠
+                    - categoryId: 4
+                      name: 가구
+                    - categoryId: 5
+                      name: 생활용품
+                    - categoryId: 6
+                      name: 기타
+                    
+  /api/v1/categories/{categoryId}:
+    get:
+      tags:
+        - Category
+      summary: 카테고리 단건 조회
+      description: 카테고리 ID로 카테고리 이름을 조회합니다.
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 조회할 카테고리의 ID
+      responses:
+        '200':
+          description: 카테고리 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          description: 해당 ID의 카테고리를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleErrorResponse'
         
 components:
   securitySchemes:
@@ -1186,6 +1280,16 @@ components:
         minimum: 20
         maximum: 100
   schemas:
+    Category:
+      type: object
+      properties:
+        categoryId:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: 패션
     SimpleErrorResponse:
       type: object
       properties:
