@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: Generated API
+  title: Deal4U API
   version: 1.0.0
 paths:
   /api/v1/login/{type}/page:
@@ -798,7 +798,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  sllerId:
+                  sellerId:
                     type: integer
                   sellerNickname:
                     type: string
@@ -850,7 +850,6 @@ paths:
     post:
       tags:
         - Order
-      summary: 주문하기
       parameters:
         - name: auctionId
           in: path
@@ -886,7 +885,7 @@ paths:
                 phoneNumber:
                   type: string
                   description: 핸드폰 번호
-                reciver:
+                receiver:
                   type: string
                   description: 받는 분
                 content: 
@@ -913,7 +912,6 @@ paths:
     post:
       tags:
         - Payment
-      summary: 결제 승인
       requestBody:
         content:
           application/json:
@@ -923,7 +921,7 @@ paths:
                 price:
                   type: integer
                   description: 주문 금액
-                orderId:
+                orderI
                   type: string
                   description: 우편번호
                 paymentKey:
@@ -1035,8 +1033,8 @@ paths:
                               example: "2025-07-01T09:00:00Z"
                             paymentDeadline:
                               type: string
-                              format: date
-                              description: 결제 마감일 
+                              format: date-time
+                              description: 결제 마감 시간 
                               example: "2025-08-01"
                             bidCount:
                               type: integer
