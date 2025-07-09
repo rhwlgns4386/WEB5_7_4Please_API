@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: Deal4U API
+  title: Deal 4U API
   version: 1.0.0
 paths:
   /api/v1/login/{type}/page:
@@ -343,13 +343,13 @@ paths:
                 description:
                   type: string
                   description: 상품 설명
-                postalCode:
+                zipCode:
                   type: string
                   description: 우편번호
                 address:
                   type: string
                   description: 기본 주소
-                detailAddress:
+                addressDetail:
                   type: string
                   description: 상세 주소
                 phoneNumber:
@@ -375,9 +375,9 @@ paths:
                 - productName
                 - categoryId
                 - description
-                - postalCode
+                - zipCode
                 - address
-                - detailAddress
+                - addressDetail
                 - phoneNumber
                 - startDate
                 - bidPeriod
@@ -849,7 +849,9 @@ paths:
   /api/v1/auctions/{auctionId}/orders/{type}:
     post:
       tags:
-        - Order
+        - Orders
+      summary: 주문 정보 등록
+      description: 경매 ID를 기반으로 배송 정보를 등록합니다.
       parameters:
         - name: auctionId
           in: path
@@ -862,8 +864,8 @@ paths:
           required: true
           schema:
             type: string
-            enum: [buy-now, award-bit]
-            description: 주문 종류
+            enum: [buy-now, award-bid]
+            description: 주문 종류(일반 입찰, 즉시 입찰)
       requestBody:
         content:
           application/json:
@@ -873,13 +875,13 @@ paths:
                 price:
                   type: integer
                   description: 주문 금액
-                postalCode:
+                zipCode:
                   type: string
                   description: 우편번호
                 address:
                   type: string
                   description: 기본 주소
-                detailAddress:
+                addressDetail:
                   type: string
                   description: 상세 주소
                 phoneNumber:
@@ -908,10 +910,141 @@ paths:
             application/json:
                 schema:
                   $ref: '#/components/schemas/SimpleErrorResponse'
+  /api/v1/orders/{orderId}:
+    get:
+      tags:
+        - Orders
+      summary: 특정 주문을 조회
+      description: 주문 ID로 주문 상세 정보를 조회합니다.
+      parameters: 
+        - name: orderId 
+          in: path 
+          required: true
+          description: 조회할 주문의 ID
+          schema: 
+            type: string
+      responses:
+        '200':
+          description: 주문 상세 정보 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  imageUrl:
+                    type: string
+                    format: uri
+                    description: 상품 이미지 URL
+                  productName:
+                    type: string
+                    description: 상품명
+                  price: 
+                    type: integer
+                    description: 상품 가격
+                  sellerName:
+                    type: string
+                    description: 판매자 이름
+                  address:
+                    type: string
+                    description: 기본 주소
+                  addressDetail:
+                    type: string
+                    description: 상세 주소
+                  zipCode:
+                    type: string
+                    description: 우편번호
+                  phoneNumber:
+                    type: string
+                    description: 수령인 연락처
+                  deliveryRequest:
+                    type: string
+                    description: 배송 요청 사항 (선택)
+                  recipient:
+                    type: string
+                    description: 수령인
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleErrorResponse'
+        '404':
+          description: 주문을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleErrorResponse'
+    put:
+      tags:
+        - Orders
+      summary: 주문 정보 업데이트
+      description: 주문 ID를 기반으로 배송 정보를 업데이트합니다.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 주문 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - address
+                - addressDetail
+                - zipCode
+                - phone
+                - receiver
+              properties:
+                address:
+                  type: string
+                  description: 기본 주소
+                addressDetail:
+                  type: string
+                  description: 상세 주소
+                zipCode:
+                  type: string
+                  description: 우편번호
+                phone:
+                  type: string
+                  description: 전화번호
+                content:
+                  type: string
+                  description: 배송 요청 사항 (선택)
+                receiver:
+                  type: string
+                  description: 수령인
+      responses:
+        '200':
+          description: 주문 정보 업데이트 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 주문이 성공적으로 업데이트되었습니다.
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleErrorResponse'
+        '404':
+          description: 주문을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleErrorResponse'
   /api/v1/payments/confirm:
     post:
       tags:
         - Payment
+      summary: 결제 확인
       requestBody:
         content:
           application/json:
@@ -921,7 +1054,7 @@ paths:
                 price:
                   type: integer
                   description: 주문 금액
-                orderI
+                orderId:
                   type: string
                   description: 우편번호
                 paymentKey:
@@ -1040,6 +1173,9 @@ paths:
                               type: integer
                               description: 총 입찰 개수
                               example: 42
+                            sellerName:
+                              type: string
+                              description: 판매자 닉네임
   /api/v1/my/auctions:
     get:
       tags:
