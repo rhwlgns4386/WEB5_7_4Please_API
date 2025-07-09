@@ -751,6 +751,18 @@ paths:
               schema:
                 type: object
                 properties:
+                  highestBidPrice:
+                    type: integer
+                    description: 최고입찰가
+                  instantBidPrice:
+                    type: integer
+                    description: 즉시 입찰가
+                  bidCount:
+                    type: integer
+                    description: 입찰 개수
+                  startingPrice:
+                    type: integer
+                    description: 시작가
                   productName:
                     type: string
                     description: 상품명
