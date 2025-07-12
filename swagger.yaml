@@ -4,7 +4,7 @@ info:
   title: Deal 4U API
   version: 1.0.0
 paths:
-  /api/v1/login/{type}/page:
+  /api/v1/login/page/{type}:
     get:
       tags:
         - Member
@@ -203,7 +203,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        '204':
           description: 탈퇴 성공
           content:
             application/json:
@@ -239,7 +239,7 @@ paths:
             minimum: 0
         - name: size
           in: query
-          required: true
+          required: false
           schema:
             type: integer
             minimum: 20
@@ -260,10 +260,8 @@ paths:
           in: query
           required: false
           schema:
-            type: array
-            items:
-              type: string
-              enum: [latest, bids, timeout] 
+            type: string
+            enum: [latest, bids, timeout] 
       responses:
         '200':
           description: 경매 목록 응답
@@ -353,7 +351,7 @@ paths:
                 addressDetail:
                   type: string
                   description: 상세 주소
-                phoneNumber:
+                phone:
                   type: string
                   description: 핸드폰 번호
                 startDate:
@@ -362,7 +360,7 @@ paths:
                   description: 경매 시작일 (날짜 + 시간)
                 bidPeriod:
                   type: string
-                  enum: ["3Day", "5Day"]
+                  enum: ["THREE", "FIVE", "SEVEN"]
                   description: 입찰 기간
                 startingPrice:
                   type: integer
@@ -379,7 +377,7 @@ paths:
                 - zipCode
                 - address
                 - addressDetail
-                - phoneNumber
+                - phone
                 - startDate
                 - bidPeriod
                 - startingPrice
@@ -414,17 +412,11 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/SimpleErrorResponse'
-  /api/v1/auctions/{auctionId}/bids:
+  /api/v1/bids:
     post:
       tags:
         - Bids
       summary: 입찰
-      parameters:
-      - name: auctionId
-        in: path
-        required: true
-        schema:
-          type: integer
       requestBody:
         content:
           application/json:
@@ -434,8 +426,11 @@ paths:
                 price:
                   type: integer
                   description: 입찰가
+                auctionId:
+                  type: integer
+                  description: 경매 id
       responses:
-        '200':
+        '201':
           description: 입찰 성공
         '401':
           description: 인증 실패
@@ -534,7 +529,7 @@ paths:
                               description: 입찰 수
                             status:
                               type: string
-                              enum: [waiting auction,in progress,pay waiting]
+                              enum: [waiting auction,in progress,pay waiting,paied]
   /api/v1/auctions/{auctionId}/shipment:
     post:
       tags : 
@@ -888,26 +883,11 @@ paths:
                 price:
                   type: integer
                   description: 주문 금액
-                zipCode:
-                  type: string
-                  description: 우편번호
-                address:
-                  type: string
-                  description: 기본 주소
-                addressDetail:
-                  type: string
-                  description: 상세 주소
-                phoneNumber:
-                  type: string
-                  description: 핸드폰 번호
-                receiver:
-                  type: string
-                  description: 받는 분
-                content: 
-                  type: string
-                  description: 배송 요청 사항
+                memberId:
+                  type: integer
+                  description: 주문자 ID               
       responses:
-        '200':
+        '201':
           description: 즉시입찰 주문 성공
           content:
             application/json:
@@ -922,7 +902,13 @@ paths:
           content:
             application/json:
                 schema:
-                  $ref: '#/components/schemas/SimpleErrorResponse'
+                 $ref: '#/components/schemas/SimpleErrorResponse'
+        '404':
+         description: 경매나 사용자 없음
+         content:
+           application/json:
+             schema:
+                 $ref: '#/components/schemas/SimpleErrorResponse'
   /api/v1/orders/{orderId}:
     get:
       tags:
@@ -966,7 +952,7 @@ paths:
                   zipCode:
                     type: string
                     description: 우편번호
-                  phoneNumber:
+                  phone:
                     type: string
                     description: 수령인 연락처
                   deliveryRequest:
@@ -1031,16 +1017,8 @@ paths:
                   type: string
                   description: 수령인
       responses:
-        '200':
+        '204':
           description: 주문 정보 업데이트 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 주문이 성공적으로 업데이트되었습니다.
         '400':
           description: 잘못된 요청
           content:
@@ -1064,7 +1042,7 @@ paths:
             schema:
               type: object
               properties:
-                price:
+                amount:
                   type: integer
                   description: 주문 금액
                 orderId:
@@ -1138,12 +1116,14 @@ paths:
                               type: string
                               description: 경매 상태
                               enum:
-                                - ACTIVE
-                                - OUTBID
-                                - WINNING
-                                - SUCCESS
-                                - FAILED
-                                - CANCELED
+                                - OPEN(진행중)
+                                - CLOSE(경매 종료)
+                                - FAIL(패찰)
+                                - PENDING(낙찰)
+                                - SUCCESS(결제 완료)
+                                - REJECTED(결제 실패)
+                                - INTRANSIT(배송 중)
+                                - DELIVERED(구매 확정)
                             startBidPrice:
                               type: integer
                               description: 입찰 시작가
@@ -1281,7 +1261,14 @@ paths:
                               example: "2025-07-01T09:00:00Z"
                             status:
                               type: string
-                              enum: [OPEN, PENDING, SUCCESS, REJECT, INTRANSIT, DELIVERED, FAIL]
+                              enum:
+                                - OPEN(진행중)
+                                - PENDING(결제 대기)
+                                - SUCCESS(결제 완료)
+                                - REJECT(차상위 대기)
+                                - INTRANSIT(배송 완료)
+                                - DELIVERED(구매 확정)
+                                - FAIL(유찰)
                               description: 경매 상태
   /api/v1/auctions/{auctionId}/second-bidder/offer:
     post: 
