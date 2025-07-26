@@ -39,7 +39,7 @@ paths:
         - name: code
           in: query
           required: true
-           schema:
+          schema:
             type: string
       responses:
         '200':
